@@ -45,6 +45,18 @@
 		});
 	};
 
+	TagManager.prototype.pushTransaction = function (success, fail, transaction, transactionItems) {
+		var timestamp = new Date().getTime();
+		queue.push({
+			timestamp: timestamp,
+			method: 'pushTransaction',
+			success: success,
+			fail: fail,
+			transaction: transaction,
+			transactionItems : transactionItems
+		});
+	};
+
 	TagManager.prototype.pushEvent = function (success, fail, eventData) {
 		var timestamp = new Date().getTime();
 		queue.push({
@@ -55,6 +67,7 @@
 			eventData: eventData
 		});
 	};
+
 
 	// log a page view
 	//
@@ -116,6 +129,8 @@
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.category, item.eventAction, item.eventLabel, item.eventValue]);
 			} else if (item.method === 'pushEvent') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.eventData]);
+			} else if (item.method === 'pushTransaction') {
+				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.transaction, item.transactionItems]);
 			} else if (item.method === 'trackPage') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.pageURL]);
 			} else if (item.method === 'dispatch') {

@@ -1,16 +1,16 @@
 /**
  * Copyright (c) 2014 Jared Dickson
- * 
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,26 +22,27 @@
 
 package com.jareddickson.cordova.tagmanager;
 
-import org.apache.cordova.CordovaWebView;
-import org.apache.cordova.CallbackContext;
-import org.apache.cordova.CordovaPlugin;
-import org.apache.cordova.CordovaInterface;
-
 import com.google.analytics.tracking.android.GAServiceManager;
 import com.google.tagmanager.Container;
 import com.google.tagmanager.ContainerOpener;
 import com.google.tagmanager.ContainerOpener.OpenType;
 import com.google.tagmanager.DataLayer;
+import com.google.tagmanager.Logger;
 import com.google.tagmanager.TagManager;
 
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.CordovaInterface;
+import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaWebView;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * This class echoes a string called from JavaScript.
@@ -66,6 +67,7 @@ public class CDVTagManager extends CordovaPlugin {
                 GAServiceManager.getInstance().setLocalDispatchPeriod(args.getInt(1));
 
                 TagManager tagManager = TagManager.getInstance(this.cordova.getActivity().getApplicationContext());
+                // tagManager.getLogger().setLogLevel(Logger.LogLevel.VERBOSE);
                 ContainerOpener.openContainer(
                         tagManager,                             // TagManager instance.
                         args.getString(0),                      // Tag Manager Container ID.
@@ -124,6 +126,45 @@ public class CDVTagManager extends CordovaPlugin {
             } else {
                 callback.error("pushEvent failed - not initialized");
             }
+        } else if (action.equals("pushTransaction")) {
+            if (inited) {
+                try {
+                    DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
+
+                    JSONObject transaction = args.getJSONObject(0);
+                    JSONArray transactionItems = args.getJSONArray(1);
+                    ArrayList<Map<String, String>> purchasedItems = new ArrayList<Map<String, String>>();
+
+                    for (int i = 0; i < transactionItems.length(); i++) {
+                        JSONObject item = transactionItems.getJSONObject(i);
+                        HashMap<String, String> currentItem = new HashMap<String, String>();
+                        currentItem.put("name", item.getString("name"));
+                        currentItem.put("sku", item.getString("sku"));
+                        currentItem.put("category", item.getString("category"));
+                        currentItem.put("price", item.getString("price"));
+                        currentItem.put("currency", item.getString("currency"));
+                        currentItem.put("quantity", item.getString("quantity"));
+                        purchasedItems.add(currentItem);
+                    }
+
+                    dataLayer.push(DataLayer.mapOf("event", "transaction",
+                            "transactionId", transaction.getString("transactionId"),
+                            "transactionTotal", transaction.getString("transactionTotal"),
+                            "transactionAffiliation", transaction.getString("transactionAffiliation"),
+                            "transactionTax", transaction.getString("transactionTax"),
+                            "transactionShipping", transaction.getString("transactionShipping"),
+                            "transactionCurrency", transaction.getString("transactionCurrency"),
+                            "transactionProducts", purchasedItems));
+
+                    callback.success("pushTransaction: " + dataLayer.toString());
+
+                    return true;
+                } catch (final Exception e) {
+                    callback.error(e.getMessage());
+                }
+            } else {
+                callback.error("pushTransaction failed - not initialized");
+            }
         } else if (action.equals("trackPage")) {
             if (inited) {
                 try {
@@ -163,9 +204,9 @@ public class CDVTagManager extends CordovaPlugin {
         Object value;
         while (it.hasNext()) {
             key = it.next();
-            value = o.has(key.toString()) ? o.get(key.toString()): null;
+            value = o.has(key.toString()) ? o.get(key.toString()) : null;
             map.put(key, value);
         }
         return map;
-    }    
+    }
 }
