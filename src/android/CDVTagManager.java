@@ -255,9 +255,8 @@ public class CDVTagManager extends CordovaPlugin {
                                             "products", DataLayer.listOf(
                                                     DataLayer.mapOf(
                                                             "name", product.get("name"),       // Name or ID is required.
-                                                            "id", product.getString("sku"),
-                                                            "price", product.getString("price"),
-                                                            "category", product.getString("category")
+                                                            "id", product.getString("id"),
+                                                            "price", product.getString("price")
                                                     ))))));
                     callback.success("pushProductClick = " + args.getString(0) + " list=" + list);
                     return true;

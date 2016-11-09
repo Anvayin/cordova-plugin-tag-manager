@@ -12,6 +12,7 @@
         <clobbers target="cordova.plugins.TagManager"/>
     </js-module>
     <platform name="android">
+        <framework src="com.google.android.gms:play-services-tagmanager:+" />
         <config-file parent="/*" target="res/xml/config.xml">
             <feature name="TagManager">
                 <param name="android-package" value="com.jareddickson.cordova.tagmanager.CDVTagManager"/>
@@ -22,7 +23,9 @@
             <uses-permission android:name="android.permission.INTERNET" />
         </config-file>
         <source-file src="src/android/CDVTagManager.java" target-dir="src/com/jareddickson/cordova/tagmanager"/>
+        <!--        
         <source-file src="src/android/libGoogleAnalyticsServices.jar" target-dir="libs" />
+        -->
     </platform>
     <platform name="ios">
         <config-file parent="/*" target="config.xml">
