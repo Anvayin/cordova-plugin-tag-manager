@@ -22,13 +22,15 @@
 
 package com.jareddickson.cordova.tagmanager;
 
-import com.google.analytics.tracking.android.GAServiceManager;
-import com.google.tagmanager.Container;
-import com.google.tagmanager.ContainerOpener;
-import com.google.tagmanager.ContainerOpener.OpenType;
-import com.google.tagmanager.DataLayer;
-import com.google.tagmanager.Logger;
-import com.google.tagmanager.TagManager;
+import android.support.annotation.NonNull;
+import android.util.Log;
+
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.tagmanager.Container;
+import com.google.android.gms.tagmanager.ContainerHolder;
+import com.google.android.gms.tagmanager.DataLayer;
+import com.google.android.gms.tagmanager.TagManager;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -43,14 +45,19 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import co.mchannel.fashionforall.R;
 
 /**
  * This class echoes a string called from JavaScript.
  */
 public class CDVTagManager extends CordovaPlugin {
 
-    private Container mContainer;
-    private boolean inited = false;
+    private static final long TIMEOUT_FOR_CONTAINER_OPEN_MILLISECONDS = 2000;
+    private static final String TAG = "CDVTagManager";
+    private boolean initialized = false;
+
 
     public CDVTagManager() {
     }
@@ -64,10 +71,11 @@ public class CDVTagManager extends CordovaPlugin {
         if (action.equals("initGTM")) {
             try {
                 // Set the dispatch interval
-                GAServiceManager.getInstance().setLocalDispatchPeriod(args.getInt(1));
-
+                // GAServiceManager.getInstance().setLocalDispatchPeriod(args.getInt(1));
                 TagManager tagManager = TagManager.getInstance(this.cordova.getActivity().getApplicationContext());
-                // tagManager.getLogger().setLogLevel(Logger.LogLevel.VERBOSE);
+                tagManager.setVerboseLoggingEnabled(true);
+
+                /*
                 ContainerOpener.openContainer(
                         tagManager,                             // TagManager instance.
                         args.getString(0),                      // Tag Manager Container ID.
@@ -78,10 +86,32 @@ public class CDVTagManager extends CordovaPlugin {
                             public void containerAvailable(Container container) {
                                 // Handle assignment in callback to avoid blocking main thread.
                                 mContainer = container;
-                                inited = true;
+                                initialized = true;
                             }
                         }
                 );
+                */
+
+                String containerId = args.getString(0);
+
+                // TODO - Provide a way to specify the default container through plugin configuration
+                PendingResult<ContainerHolder> pending = tagManager.loadContainerPreferNonDefault(containerId, R.raw.defaultcontainer_binary);
+                pending.setResultCallback(new ResultCallback<ContainerHolder>() {
+                    @Override
+                    public void onResult(@NonNull ContainerHolder containerHolder) {
+                        ContainerHolderSingleton.setContainerHolder(containerHolder);
+                        Container container = containerHolder.getContainer();
+                        if (!containerHolder.getStatus().isSuccess()) {
+                            Log.e(TAG, "Failure loading container");
+                            return;
+                        }
+                        ContainerLoadedCallback.registerCallbacksForContainer(container);
+                        containerHolder.setContainerAvailableListener(new ContainerLoadedCallback());
+                        initialized = true;
+
+                    }
+                }, TIMEOUT_FOR_CONTAINER_OPEN_MILLISECONDS, TimeUnit.MILLISECONDS);
+
                 callback.success("initGTM - id = " + args.getString(0) + "; interval = " + args.getInt(1) + " seconds");
                 return true;
             } catch (final Exception e) {
@@ -89,20 +119,21 @@ public class CDVTagManager extends CordovaPlugin {
             }
         } else if (action.equals("exitGTM")) {
             try {
-                inited = false;
+                initialized = false;
                 callback.success("exitGTM");
                 return true;
             } catch (final Exception e) {
                 callback.error(e.getMessage());
             }
         } else if (action.equals("trackEvent")) {
-            if (inited) {
+            if (initialized) {
                 try {
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
-                    int value = 0;
+                    int value;
                     try {
                         value = args.getInt(3);
                     } catch (Exception e) {
+                        value = 0;
                     }
                     dataLayer.push(DataLayer.mapOf("event", "interaction", "target", args.getString(0), "action", args.getString(1), "target-properties", args.getString(2), "value", value));
                     callback.success("trackEvent - category = " + args.getString(0) + "; action = " + args.getString(1) + "; label = " + args.getString(2) + "; value = " + value);
@@ -114,7 +145,7 @@ public class CDVTagManager extends CordovaPlugin {
                 callback.error("trackEvent failed - not initialized");
             }
         } else if (action.equals("pushEvent")) {
-            if (inited) {
+            if (initialized) {
                 try {
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
                     dataLayer.push(objectMap(args.getJSONObject(0)));
@@ -127,7 +158,7 @@ public class CDVTagManager extends CordovaPlugin {
                 callback.error("pushEvent failed - not initialized");
             }
         } else if (action.equals("pushTransaction")) {
-            if (inited) {
+            if (initialized) {
                 try {
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
 
@@ -156,6 +187,8 @@ public class CDVTagManager extends CordovaPlugin {
                             "transactionCurrency", transaction.getString("transactionCurrency"),
                             "transactionProducts", purchasedItems));
 
+
+                    clearDataLayer();
                     callback.success("pushTransaction: " + dataLayer.toString());
 
                     return true;
@@ -165,11 +198,80 @@ public class CDVTagManager extends CordovaPlugin {
             } else {
                 callback.error("pushTransaction failed - not initialized");
             }
-        } else if (action.equals("trackPage")) {
-            if (inited) {
+        } else if (action.equals("pushImpressions")) {
+            // TODO - Reimplement this with correct values.
+            /*
+            if (initialized) {
                 try {
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
-                    dataLayer.push(DataLayer.mapOf("event", "content-view", "content-name", args.get(0)));
+                    // Product impressions are sent by pushing an impressions object
+                    // containing one or more impressionFieldObjects.
+                    // Sample Data - Replace with real data.
+                    dataLayer.push("ecommerce",
+                            DataLayer.mapOf(
+                                    "currencyCode", "EUR",                                  // Local currency is optional.
+                                    "impressions", DataLayer.listOf(
+                                            DataLayer.mapOf(
+                                                    "name", "Triblend Android T-Shirt",             // Name or ID is required.
+                                                    "id", "12345",
+                                                    "price", "15.25",
+                                                    "brand", "Google",
+                                                    "category", "Google Apparel",
+                                                    "variant", "Gray",
+                                                    "list", "Search Results",
+                                                    "position", 1),
+                                            DataLayer.mapOf(
+                                                    "name", "Donut Friday Scented T-Shirt",
+                                                    "id", "67890",
+                                                    "price", "33.75",
+                                                    "brand", "Google",
+                                                    "category", "Google Apparel",
+                                                    "variant", "Black",
+                                                    "list", "Search Results",
+                                                    "position", 2))));
+
+                    callback.success("pushImpressions: " + dataLayer.toString());
+                    return true;
+
+                } catch (final Exception e) {
+                    callback.error(e.getMessage());
+                }
+            } else {
+                callback.error("pushImpressions failed - not initialized");
+            }
+            */
+        } else if (action.equals("pushProductClick")) {
+            if (initialized) {
+                try {
+                    JSONObject product = args.getJSONObject(0);
+                    String list = args.getString(1);
+
+                    DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
+                    dataLayer.pushEvent("productClick", DataLayer.mapOf(
+                            "ecommerce", DataLayer.mapOf(
+                                    "click", DataLayer.mapOf(
+                                            "actionField", DataLayer.mapOf(
+                                                    "list", list),                    // Optional list property.
+                                            "products", DataLayer.listOf(
+                                                    DataLayer.mapOf(
+                                                            "name", product.get("name"),       // Name or ID is required.
+                                                            "id", product.getString("sku"),
+                                                            "price", product.getString("price"),
+                                                            "category", product.getString("category")
+                                                    ))))));
+                    callback.success("pushProductClick = " + args.getString(0) + " list=" + list);
+                    return true;
+                } catch (final Exception e) {
+                    callback.error(e.getMessage());
+                }
+            } else {
+                callback.error("pushProductClick failed - not initialized");
+            }
+        } else if (action.equals("trackPage")) {
+            if (initialized) {
+                try {
+                    DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
+                    dataLayer.pushEvent("content-view", DataLayer.mapOf("content-name", args.get(0)));
                     callback.success("trackPage - url = " + args.getString(0));
                     return true;
                 } catch (final Exception e) {
@@ -179,9 +281,9 @@ public class CDVTagManager extends CordovaPlugin {
                 callback.error("trackPage failed - not initialized");
             }
         } else if (action.equals("dispatch")) {
-            if (inited) {
+            if (initialized) {
                 try {
-                    GAServiceManager.getInstance().dispatchLocalHits();
+                    TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).dispatch();
                     callback.success("dispatch sent");
                     return true;
                 } catch (final Exception e) {
@@ -194,19 +296,63 @@ public class CDVTagManager extends CordovaPlugin {
         return false;
     }
 
-    private Map<Object, Object> objectMap(JSONObject o) throws JSONException {
+    private Map<String, Object> objectMap(JSONObject o) throws JSONException {
         if (o.length() == 0) {
-            return Collections.<Object, Object>emptyMap();
+            return Collections.emptyMap();
         }
-        Map<Object, Object> map = new HashMap<Object, Object>(o.length());
+        Map<String, Object> map = new HashMap<String, Object>(o.length());
         Iterator it = o.keys();
-        Object key;
+        String key;
         Object value;
         while (it.hasNext()) {
-            key = it.next();
-            value = o.has(key.toString()) ? o.get(key.toString()) : null;
+            key = (String) it.next();
+            value = o.has(key) ? o.get(key) : null;
             map.put(key, value);
         }
         return map;
+    }
+
+    private void clearDataLayer() {
+        DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
+        // Clear the Data Layer as it persists the data
+        dataLayer.push(DataLayer.mapOf("transactionId", null,
+                "transactionTotal", null,
+                "transactionAffiliation", null,
+                "transactionTax", null,
+                "transactionShipping", null,
+                "transactionCurrency", null,
+                "transactionProducts", null));
+
+    }
+
+
+    private static class ContainerLoadedCallback implements ContainerHolder.ContainerAvailableListener {
+        static void registerCallbacksForContainer(Container container) {
+        }
+
+        @Override
+        public void onContainerAvailable(ContainerHolder containerHolder, String containerVersion) {
+            // We load each container when it becomes available.
+            Container container = containerHolder.getContainer();
+            registerCallbacksForContainer(container);
+        }
+    }
+
+    private static class ContainerHolderSingleton {
+        private static ContainerHolder containerHolder;
+
+        /**
+         * Utility class; don't instantiate.
+         */
+        private ContainerHolderSingleton() {
+        }
+
+        static ContainerHolder getContainerHolder() {
+            return containerHolder;
+        }
+
+        static void setContainerHolder(ContainerHolder c) {
+            containerHolder = c;
+        }
     }
 }

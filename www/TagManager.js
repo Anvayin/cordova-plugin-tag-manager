@@ -5,7 +5,7 @@
 	var running = false;
 	var runner;
 
-	function TagManager() {}
+	function TagManager() { }
 
 	// initialize google analytics with an account ID and the min number of seconds between posting
 	//
@@ -29,7 +29,7 @@
 	//
 	// category = The event category. This parameter is required to be non-empty.
 	// eventAction = The event action. This parameter is required to be non-empty.
-	// eventLabel = The event label. This parameter may be a blank string to indicate no label.    
+	// eventLabel = The event label. This parameter may be a blank string to indicate no label.
 	// eventValue = The event value. This parameter may be -1 to indicate no value.
 	TagManager.prototype.trackEvent = function (success, fail, category, eventAction, eventLabel, eventValue) {
 		var timestamp = new Date().getTime();
@@ -53,7 +53,30 @@
 			success: success,
 			fail: fail,
 			transaction: transaction,
-			transactionItems : transactionItems
+			transactionItems: transactionItems
+		});
+	};
+
+	TagManager.prototype.pushImpressions = function (success, fail, items) {
+		var timestamp = new Date().getTime();
+		queue.push({
+			timestamp: timestamp,
+			method: 'pushImpressions',
+			success: success,
+			fail: fail,
+			items: items
+		});
+	};
+
+	TagManager.prototype.pushProductClick = function (success, fail, item, list) {
+		var timestamp = new Date().getTime();
+		queue.push({
+			timestamp: timestamp,
+			method: 'pushProductClick',
+			success: success,
+			fail: fail,
+			item: item,
+			list: list
 		});
 	};
 
@@ -131,6 +154,10 @@
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.eventData]);
 			} else if (item.method === 'pushTransaction') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.transaction, item.transactionItems]);
+			} else if (item.method === 'pushImpressions') {
+				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.items]);
+			} else if (item.method === 'pushProductClick') {
+				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.list]);
 			} else if (item.method === 'trackPage') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.pageURL]);
 			} else if (item.method === 'dispatch') {
