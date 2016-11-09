@@ -266,6 +266,35 @@ public class CDVTagManager extends CordovaPlugin {
             } else {
                 callback.error("pushProductClick failed - not initialized");
             }
+        } else if (action.equals("pushAddToCart")) {
+            if (initialized) {
+                try {
+                    JSONObject product = args.getJSONObject(0);
+                    String currencyCode = args.getString(1);
+                    DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
+
+                    // Measure adding a product to a shopping cart by using an "add"
+                    // actionFieldObject and a list of productFieldObjects.
+                    dataLayer.pushEvent("addToCart",
+                            DataLayer.mapOf(
+                                    "ecommerce", DataLayer.mapOf(
+                                            "currencyCode", currencyCode,
+                                            "add", DataLayer.mapOf(                             // 'add' actionFieldObject measures.
+                                                    "products", DataLayer.listOf(
+                                                            DataLayer.mapOf(
+                                                                    "name", product.get("name"),
+                                                                    "id", product.getString("id"),
+                                                                    "price", product.getString("price"),
+                                                                    "quantity", 1))))));
+
+                    callback.success("pushAddToCart = " + args.getString(0) + " currencyCode=" + currencyCode);
+                    return true;
+                } catch (final Exception e) {
+                    callback.error(e.getMessage());
+                }
+            } else {
+                callback.error("pushAddToCart failed - not initialized");
+            }
         } else if (action.equals("trackPage")) {
             if (initialized) {
                 try {
