@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -74,23 +75,6 @@ public class CDVTagManager extends CordovaPlugin {
                 // GAServiceManager.getInstance().setLocalDispatchPeriod(args.getInt(1));
                 TagManager tagManager = TagManager.getInstance(this.cordova.getActivity().getApplicationContext());
                 tagManager.setVerboseLoggingEnabled(true);
-
-                /*
-                ContainerOpener.openContainer(
-                        tagManager,                             // TagManager instance.
-                        args.getString(0),                      // Tag Manager Container ID.
-                        OpenType.PREFER_NON_DEFAULT,            // Prefer not to get the default container, but stale is OK.
-                        null,                                   // Time to wait for saved container to load (ms). Default is 2000ms.
-                        new ContainerOpener.Notifier() {        // Called when container loads.
-                            @Override
-                            public void containerAvailable(Container container) {
-                                // Handle assignment in callback to avoid blocking main thread.
-                                mContainer = container;
-                                initialized = true;
-                            }
-                        }
-                );
-                */
 
                 String containerId = args.getString(0);
 
@@ -157,52 +141,12 @@ public class CDVTagManager extends CordovaPlugin {
             } else {
                 callback.error("pushEvent failed - not initialized");
             }
-        } else if (action.equals("pushTransaction")) {
-            if (initialized) {
-                try {
-                    DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
-
-                    JSONObject transaction = args.getJSONObject(0);
-                    JSONArray transactionItems = args.getJSONArray(1);
-                    ArrayList<Map<String, String>> purchasedItems = new ArrayList<Map<String, String>>();
-
-                    for (int i = 0; i < transactionItems.length(); i++) {
-                        JSONObject item = transactionItems.getJSONObject(i);
-                        HashMap<String, String> currentItem = new HashMap<String, String>();
-                        currentItem.put("name", item.getString("name"));
-                        currentItem.put("sku", item.getString("sku"));
-                        currentItem.put("category", item.getString("category"));
-                        currentItem.put("price", item.getString("price"));
-                        currentItem.put("currency", item.getString("currency"));
-                        currentItem.put("quantity", item.getString("quantity"));
-                        purchasedItems.add(currentItem);
-                    }
-
-                    dataLayer.push(DataLayer.mapOf("event", "transaction",
-                            "transactionId", transaction.getString("transactionId"),
-                            "transactionTotal", transaction.getString("transactionTotal"),
-                            "transactionAffiliation", transaction.getString("transactionAffiliation"),
-                            "transactionTax", transaction.getString("transactionTax"),
-                            "transactionShipping", transaction.getString("transactionShipping"),
-                            "transactionCurrency", transaction.getString("transactionCurrency"),
-                            "transactionProducts", purchasedItems));
-
-
-                    clearDataLayer();
-                    callback.success("pushTransaction: " + dataLayer.toString());
-
-                    return true;
-                } catch (final Exception e) {
-                    callback.error(e.getMessage());
-                }
-            } else {
-                callback.error("pushTransaction failed - not initialized");
-            }
         } else if (action.equals("pushImpressions")) {
             // TODO - Reimplement this with correct values.
-            /*
             if (initialized) {
                 try {
+            /*
+
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
                     // Product impressions are sent by pushing an impressions object
                     // containing one or more impressionFieldObjects.
@@ -229,8 +173,11 @@ public class CDVTagManager extends CordovaPlugin {
                                                     "variant", "Black",
                                                     "list", "Search Results",
                                                     "position", 2))));
-
                     callback.success("pushImpressions: " + dataLayer.toString());
+
+            */
+                    callback.success("pushImpressions called. ");
+
                     return true;
 
                 } catch (final Exception e) {
@@ -239,15 +186,27 @@ public class CDVTagManager extends CordovaPlugin {
             } else {
                 callback.error("pushImpressions failed - not initialized");
             }
-            */
         } else if (action.equals("pushProductClick")) {
             if (initialized) {
                 try {
+
                     JSONObject product = args.getJSONObject(0);
                     String list = args.getString(1);
 
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
-                    dataLayer.pushEvent("productClick", DataLayer.mapOf(
+
+                    String category = list;
+                    String productAction = "Click";
+                    String label = product.getString("name");
+
+                    int value;
+                    try {
+                        value = (int) Float.parseFloat(product.getString("price"));
+                    } catch (Exception e) {
+                        value = 0;
+                    }
+
+                    dataLayer.push(DataLayer.mapOf(
                             "ecommerce", DataLayer.mapOf(
                                     "click", DataLayer.mapOf(
                                             "actionField", DataLayer.mapOf(
@@ -258,20 +217,38 @@ public class CDVTagManager extends CordovaPlugin {
                                                             "id", product.getString("id"),
                                                             "price", product.getString("price")
                                                     ))))));
-                    callback.success("pushProductClick = " + args.getString(0) + " list=" + list);
+
+                    dataLayer.push(DataLayer.mapOf("event", "interaction", "target", category, "action", productAction, "target-properties", label, "value", value));
+                    Log.d(TAG, "Pushed click : " + dataLayer.toString());
+                    callback.success("trackEvent - action = " + productAction + "; category = " + category + "; label = " + label + "; value = " + value);
+
+                    dataLayer.push("event", null);
+                    dataLayer.push("target", null);
+                    dataLayer.push("action", null);
+                    dataLayer.push("target-properties", null);
+                    dataLayer.push("value", null);
+
+                    dataLayer.push("ecommerce", null);
+                    Log.d(TAG, "After Clearing : " + dataLayer.toString());
+
                     return true;
                 } catch (final Exception e) {
                     callback.error(e.getMessage());
                 }
             } else {
-                callback.error("pushProductClick failed - not initialized");
+                callback.error("trackEvent failed - not initialized");
             }
+
         } else if (action.equals("pushAddToCart")) {
             if (initialized) {
                 try {
                     JSONObject product = args.getJSONObject(0);
                     String currencyCode = args.getString(1);
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
+                    /*
+
+                    Log.d(TAG, "Before pushAddToCart : " + dataLayer.toString());
+
 
                     // Measure adding a product to a shopping cart by using an "add"
                     // actionFieldObject and a list of productFieldObjects.
@@ -287,7 +264,21 @@ public class CDVTagManager extends CordovaPlugin {
                                                                     "price", product.getString("price"),
                                                                     "quantity", 1))))));
 
-                    callback.success("pushAddToCart = " + args.getString(0) + " currencyCode=" + currencyCode);
+                    Log.d(TAG, "After pushAddToCart : " + dataLayer.toString());
+                    */
+
+                    callback.success("pushAddToCart = " + args.getString(0) + " currencyCode = " + currencyCode);
+                    // Clear the Data Layer.
+                    // dataLayer.push(DataLayer.mapOf("ecommerce", null));
+
+                    /*
+                    dataLayer.push(
+                            DataLayer.mapOf(
+                                    "ecommerce", DataLayer.mapOf(
+                                            "currencyCode", null,
+                                            "add", null)));
+                                            */
+
                     return true;
                 } catch (final Exception e) {
                     callback.error(e.getMessage());
@@ -300,7 +291,14 @@ public class CDVTagManager extends CordovaPlugin {
                 try {
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
                     dataLayer.pushEvent("content-view", DataLayer.mapOf("content-name", args.get(0)));
+                    TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).dispatch();
+
                     callback.success("trackPage - url = " + args.getString(0));
+
+                    // Clear Data Layer.
+                    dataLayer.push("event", null);
+                    dataLayer.push("content-name", null);
+
                     return true;
                 } catch (final Exception e) {
                     callback.error(e.getMessage());
@@ -320,7 +318,57 @@ public class CDVTagManager extends CordovaPlugin {
             } else {
                 callback.error("dispatch failed - not initialized");
             }
+        } else if (action.equals("pushTransaction")) {
+            if (initialized) {
+                try {
+                    DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
+                    JSONObject transaction = args.getJSONObject(0);
+                    JSONArray transactionItems = args.getJSONArray(1);
+                    ArrayList items = new ArrayList<Map<String, Object>>();
+
+                    for (int i = 0; i < transactionItems.length(); i++) {
+                        JSONObject item = transactionItems.getJSONObject(i);
+
+                        Map<String, Object> itemMap = DataLayer.mapOf(
+                                "name", item.getString("name"),
+                                "id", item.getString("id"),
+                                "price", item.getString("price"),
+                                "quantity", item.getString("quantity"));
+                        items.add(itemMap);
+                    }
+
+                    List<Object> products = DataLayer.listOf(items.toArray(new Object[items.size()]));
+                    // dataLayer.push();
+
+                    String contentName = "Payment Response";
+
+                    dataLayer.pushEvent("orderPlaced", DataLayer.mapOf("content-name", contentName, "ecommerce",
+                            DataLayer.mapOf(
+                                    "purchase", DataLayer.mapOf(
+                                            "actionField", DataLayer.mapOf(
+                                                    "id", transaction.getString("transactionId"),
+                                                    "affiliation", transaction.getString("transactionAffiliation"),
+                                                    "revenue", transaction.getString("transactionTotal"),
+                                                    "tax", transaction.getString("transactionTax"),
+                                                    "shipping", transaction.getString("transactionShipping")),
+                                            "products", products
+                                    ))));
+
+                    callback.success("pushTransaction: " + dataLayer.toString());
+
+                    Log.d(TAG, "Pushed Transaction Screen View : " + dataLayer.toString());
+                    dataLayer.push("ecommerce", null);
+                    Log.d(TAG, "After Clearing : " + dataLayer.toString());
+
+                    return true;
+                } catch (final Exception e) {
+                    callback.error(e.getMessage());
+                }
+            } else {
+                callback.error("pushTransaction failed - not initialized");
+            }
         }
+
         return false;
     }
 

@@ -88,7 +88,7 @@
 			success: success,
 			fail: fail,
 			item : item,
-			list : currencyCode
+			currencyCode : currencyCode
 		});
 	};
 
@@ -171,7 +171,7 @@
             } else if (item.method === 'pushProductClick') {
                cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.list]);
             } else if (item.method === 'pushAddToCart') {
-                cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, currencyCode]);
+                cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.currencyCode]);
             } else if (item.method === 'trackPage') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.pageURL]);
 			} else if (item.method === 'dispatch') {
