@@ -349,6 +349,12 @@ public class CDVTagManager extends CordovaPlugin {
                                                             "step", stepNo),
                                                     "products", products))));
 
+                    callback.success("pushCheckout: " + dataLayer.toString());
+
+                    Log.d(TAG, "Push Checkout Screen View : " + dataLayer.toString());
+                    dataLayer.push("ecommerce", null);
+                    Log.d(TAG, "After Clearing : " + dataLayer.toString());
+                    return true;
                 } catch (final Exception e) {
                     callback.error(e.getMessage());
                 }
