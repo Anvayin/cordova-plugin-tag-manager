@@ -45,6 +45,18 @@
 		});
 	};
 
+	TagManager.prototype.pushAddToCart = function (success, fail, item, currencyCode) {
+		var timestamp = new Date().getTime();
+		queue.push({
+			timestamp: timestamp,
+			method: 'pushAddToCart',
+			success: success,
+			fail: fail,
+			item : item,
+			currencyCode : currencyCode
+		});
+	};
+
 	TagManager.prototype.pushCheckout = function (success, fail, stepNo, products, option, screenName) {
 		var timestamp = new Date().getTime();
 		queue.push({
@@ -91,18 +103,6 @@
 			fail: fail,
 			item: item,
 			list: list
-		});
-	};
-
-	TagManager.prototype.pushAddToCart = function (success, fail, item, currencyCode) {
-		var timestamp = new Date().getTime();
-		queue.push({
-			timestamp: timestamp,
-			method: 'pushAddToCart',
-			success: success,
-			fail: fail,
-			item : item,
-			currencyCode : currencyCode
 		});
 	};
 

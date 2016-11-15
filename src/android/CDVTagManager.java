@@ -276,34 +276,27 @@ public class CDVTagManager extends CordovaPlugin {
                 try {
                     JSONObject product = args.getJSONObject(0);
                     String currencyCode = args.getString(1);
+                    int value;
+                    try {
+                        value = (int) Float.parseFloat(product.getString("price"));
+                    } catch (Exception e) {
+                        value = 0;
+                    }
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
-
-
-                    // Measure adding a product to a shopping cart by using an "add"
-                    // actionFieldObject and a list of productFieldObjects.
                     dataLayer.pushEvent("addToCart",
                             DataLayer.mapOf(
                                     "ecommerce", DataLayer.mapOf(
                                             "currencyCode", currencyCode,
-                                            "add", DataLayer.mapOf(                             // 'add' actionFieldObject measures.
+                                            "add", DataLayer.mapOf(
                                                     "products", DataLayer.listOf(
                                                             DataLayer.mapOf(
                                                                     "name", product.get("name"),
                                                                     "id", product.getString("id"),
                                                                     "price", product.getString("price"),
-                                                                    "quantity", 1))))));
-
-                    Log.d(TAG, "After pushAddToCart : " + dataLayer.toString());
-
+                                                                    "quantity", 1)))),
+                                    "value", value));
                     callback.success("pushAddToCart = " + args.getString(0) + " currencyCode = " + currencyCode);
-                    // Clear the Data Layer.
-                    // dataLayer.push(DataLayer.mapOf("ecommerce", null));
-
-                    dataLayer.push(
-                            DataLayer.mapOf(
-                                    "ecommerce", DataLayer.mapOf(
-                                            "currencyCode", null,
-                                            "add", null)));
+                    dataLayer.push("ecommerce", null);
                     return true;
                 } catch (final Exception e) {
                     callback.error(e.getMessage());
