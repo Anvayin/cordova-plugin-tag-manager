@@ -275,6 +275,8 @@ public class CDVTagManager extends CordovaPlugin {
             if (initialized) {
                 try {
                     JSONObject product = args.getJSONObject(0);
+                    Map<String, Object> itemMap = getProductMap(product);
+
                     String currencyCode = args.getString(1);
                     int value;
                     try {
@@ -288,12 +290,7 @@ public class CDVTagManager extends CordovaPlugin {
                                     "ecommerce", DataLayer.mapOf(
                                             "currencyCode", currencyCode,
                                             "add", DataLayer.mapOf(
-                                                    "products", DataLayer.listOf(
-                                                            DataLayer.mapOf(
-                                                                    "name", product.get("name"),
-                                                                    "id", product.getString("id"),
-                                                                    "price", product.getString("price"),
-                                                                    "quantity", 1)))),
+                                                    "products", DataLayer.listOf(itemMap))),
                                     "value", value));
                     callback.success("pushAddToCart = " + args.getString(0) + " currencyCode = " + currencyCode);
                     dataLayer.push("ecommerce", null);
@@ -303,6 +300,34 @@ public class CDVTagManager extends CordovaPlugin {
                 }
             } else {
                 callback.error("pushAddToCart failed - not initialized");
+            }
+        } else if (action.equals("pushRemoveCart")) {
+            if (initialized) {
+                try {
+                    JSONObject product = args.getJSONObject(0);
+                    Map<String, Object> itemMap = getProductMap(product);
+
+                    int value;
+                    try {
+                        value = (int) Float.parseFloat(product.getString("price"));
+                    } catch (Exception e) {
+                        value = 0;
+                    }
+                    DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
+                    dataLayer.pushEvent("removeFromCart",
+                            DataLayer.mapOf(
+                                    "ecommerce", DataLayer.mapOf(
+                                            "remove", DataLayer.mapOf(
+                                                    "products", DataLayer.listOf(itemMap))),
+                                    "value", value));
+                    callback.success("pushRemoveCart = " + args.getString(0));
+                    dataLayer.push("ecommerce", null);
+                    return true;
+                } catch (final Exception e) {
+                    callback.error(e.getMessage());
+                }
+            } else {
+                callback.error("pushRemoveCart failed - not initialized");
             }
         } else if (action.equals("pushCheckout")) {
             if (initialized) {
@@ -319,11 +344,7 @@ public class CDVTagManager extends CordovaPlugin {
                     for (int i = 0; i < productsJSONArray.length(); i++) {
                         JSONObject item = productsJSONArray.getJSONObject(i);
 
-                        Map<String, Object> itemMap = DataLayer.mapOf(
-                                "name", item.getString("name"),
-                                "id", item.getString("id"),
-                                "price", item.getString("price"),
-                                "quantity", item.getString("quantity"));
+                        Map<String, Object> itemMap = getProductMap(item);
                         items.add(itemMap);
                     }
 
@@ -363,11 +384,7 @@ public class CDVTagManager extends CordovaPlugin {
                     for (int i = 0; i < transactionItems.length(); i++) {
                         JSONObject item = transactionItems.getJSONObject(i);
 
-                        Map<String, Object> itemMap = DataLayer.mapOf(
-                                "name", item.getString("name"),
-                                "id", item.getString("id"),
-                                "price", item.getString("price"),
-                                "quantity", item.getString("quantity"));
+                        Map<String, Object> itemMap = getProductMap(item);
                         items.add(itemMap);
                     }
 
@@ -399,6 +416,14 @@ public class CDVTagManager extends CordovaPlugin {
         }
 
         return false;
+    }
+
+    private Map<String, Object> getProductMap(JSONObject item) throws JSONException {
+        return DataLayer.mapOf(
+                "name", item.getString("name"),
+                "id", item.getString("id"),
+                "price", item.getString("price"),
+                "quantity", item.getString("quantity"));
     }
 
     private Map<String, Object> objectMap(JSONObject o) throws JSONException {

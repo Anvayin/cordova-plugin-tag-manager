@@ -57,6 +57,17 @@
 		});
 	};
 
+	TagManager.prototype.pushRemoveFromCart = function (success, fail, item) {
+		var timestamp = new Date().getTime();
+		queue.push({
+			timestamp: timestamp,
+			method: 'pushRemoveFromCart',
+			success: success,
+			fail: fail,
+			item : item
+		});
+	};
+
 	TagManager.prototype.pushCheckout = function (success, fail, stepNo, products, option, screenName) {
 		var timestamp = new Date().getTime();
 		queue.push({
@@ -178,6 +189,10 @@
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.category, item.eventAction, item.eventLabel, item.eventValue]);
 			} else if (item.method === 'pushEvent') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.eventData]);
+            } else if (item.method === 'pushAddToCart') {
+                cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.currencyCode]);
+            }  else if (item.method === 'pushRemoveFromCart') {
+                cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item]);
 			} else if (item.method === 'pushCheckout') {
 			    cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.stepNo, item.products, item.option, item.screenName]);
 			} else if (item.method === 'pushTransaction') {
@@ -186,8 +201,6 @@
                 cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.items]);
             } else if (item.method === 'pushProductClick') {
                cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.list]);
-            } else if (item.method === 'pushAddToCart') {
-                cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.currencyCode]);
             } else if (item.method === 'trackPage') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.pageURL]);
 			} else if (item.method === 'dispatch') {
