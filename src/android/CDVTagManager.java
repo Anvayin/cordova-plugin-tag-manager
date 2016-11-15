@@ -318,6 +318,43 @@ public class CDVTagManager extends CordovaPlugin {
             } else {
                 callback.error("dispatch failed - not initialized");
             }
+        } else if (action.equals("pushCheckout")) {
+            if (initialized) {
+                try {
+                    DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
+
+                    int stepNo = args.getInt(0);
+                    JSONArray productsJSONArray = args.getJSONArray(1);
+                    ArrayList items = new ArrayList<Map<String, Object>>();
+
+                    for (int i = 0; i < productsJSONArray.length(); i++) {
+                        JSONObject item = productsJSONArray.getJSONObject(i);
+
+                        Map<String, Object> itemMap = DataLayer.mapOf(
+                                "name", item.getString("name"),
+                                "id", item.getString("id"),
+                                "price", item.getString("price"),
+                                "quantity", item.getString("quantity"));
+                        items.add(itemMap);
+                    }
+
+                    List<Object> products = DataLayer.listOf(items.toArray(new Object[items.size()]));
+
+
+                    dataLayer.pushEvent("checkout",
+                            DataLayer.mapOf(
+                                    "ecommerce", DataLayer.mapOf(
+                                            "checkout", DataLayer.mapOf(
+                                                    "actionField", DataLayer.mapOf(
+                                                            "step", stepNo),
+                                                    "products", products))));
+
+                } catch (final Exception e) {
+                    callback.error(e.getMessage());
+                }
+            } else {
+                callback.error("dispatch failed - not initialized");
+            }
         } else if (action.equals("pushTransaction")) {
             if (initialized) {
                 try {
