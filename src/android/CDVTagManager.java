@@ -325,6 +325,8 @@ public class CDVTagManager extends CordovaPlugin {
 
                     int stepNo = args.getInt(0);
                     JSONArray productsJSONArray = args.getJSONArray(1);
+                    String option = args.getString(2);
+
                     ArrayList items = new ArrayList<Map<String, Object>>();
 
                     for (int i = 0; i < productsJSONArray.length(); i++) {
@@ -340,13 +342,19 @@ public class CDVTagManager extends CordovaPlugin {
 
                     List<Object> products = DataLayer.listOf(items.toArray(new Object[items.size()]));
 
+                    Map<String, Object> actionField;
+
+                    if (option.isEmpty()) {
+                        actionField = DataLayer.mapOf("step", stepNo);
+                    } else {
+                        actionField = DataLayer.mapOf("step", stepNo, "option", option);
+                    }
 
                     dataLayer.pushEvent("checkout",
                             DataLayer.mapOf(
                                     "ecommerce", DataLayer.mapOf(
                                             "checkout", DataLayer.mapOf(
-                                                    "actionField", DataLayer.mapOf(
-                                                            "step", stepNo),
+                                                    "actionField", actionField,
                                                     "products", products))));
 
                     callback.success("pushCheckout: " + dataLayer.toString());

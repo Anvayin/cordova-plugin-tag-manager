@@ -45,7 +45,7 @@
 		});
 	};
 
-	TagManager.prototype.pushCheckout = function (success, fail, stepNo, products) {
+	TagManager.prototype.pushCheckout = function (success, fail, stepNo, products, option) {
 		var timestamp = new Date().getTime();
 		queue.push({
 			timestamp: timestamp,
@@ -53,7 +53,8 @@
 			success: success,
 			fail: fail,
 			stepNo: stepNo,
-			products : products
+			products : products,
+			option : option
 		});
 	};
 
@@ -177,7 +178,7 @@
 			} else if (item.method === 'pushEvent') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.eventData]);
 			} else if (item.method === 'pushCheckout') {
-			    cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.stepNo, item.products]);
+			    cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.stepNo, item.products, item.option]);
 			} else if (item.method === 'pushTransaction') {
                 cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.transaction, item.transactionItems]);
             } else if (item.method === 'pushImpressions') {
