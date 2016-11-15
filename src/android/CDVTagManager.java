@@ -301,7 +301,7 @@ public class CDVTagManager extends CordovaPlugin {
             } else {
                 callback.error("pushAddToCart failed - not initialized");
             }
-        } else if (action.equals("pushRemoveCart")) {
+        } else if (action.equals("pushRemoveFromCart")) {
             if (initialized) {
                 try {
                     JSONObject product = args.getJSONObject(0);
@@ -327,7 +327,7 @@ public class CDVTagManager extends CordovaPlugin {
                     callback.error(e.getMessage());
                 }
             } else {
-                callback.error("pushRemoveCart failed - not initialized");
+                callback.error("pushRemoveFromCart failed - not initialized");
             }
         } else if (action.equals("pushCheckout")) {
             if (initialized) {
@@ -423,7 +423,7 @@ public class CDVTagManager extends CordovaPlugin {
                 "name", item.getString("name"),
                 "id", item.getString("id"),
                 "price", item.getString("price"),
-                "quantity", item.getString("quantity"));
+                "quantity", item.has("quantity") ? item.getString("quantity") : "1");
     }
 
     private Map<String, Object> objectMap(JSONObject o) throws JSONException {
