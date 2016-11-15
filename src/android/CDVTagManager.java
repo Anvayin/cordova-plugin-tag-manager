@@ -109,6 +109,18 @@ public class CDVTagManager extends CordovaPlugin {
             } catch (final Exception e) {
                 callback.error(e.getMessage());
             }
+        } else if (action.equals("dispatch")) {
+            if (initialized) {
+                try {
+                    TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).dispatch();
+                    callback.success("dispatch sent");
+                    return true;
+                } catch (final Exception e) {
+                    callback.error(e.getMessage());
+                }
+            } else {
+                callback.error("dispatch failed - not initialized");
+            }
         } else if (action.equals("trackEvent")) {
             if (initialized) {
                 try {
@@ -140,6 +152,26 @@ public class CDVTagManager extends CordovaPlugin {
                 }
             } else {
                 callback.error("pushEvent failed - not initialized");
+            }
+        } else if (action.equals("trackPage")) {
+            if (initialized) {
+                try {
+                    DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
+                    dataLayer.pushEvent("content-view", DataLayer.mapOf("content-name", args.get(0)));
+                    TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).dispatch();
+
+                    callback.success("trackPage - url = " + args.getString(0));
+
+                    // Clear Data Layer.
+                    dataLayer.push("event", null);
+                    dataLayer.push("content-name", null);
+
+                    return true;
+                } catch (final Exception e) {
+                    callback.error(e.getMessage());
+                }
+            } else {
+                callback.error("trackPage failed - not initialized");
             }
         } else if (action.equals("pushImpressions")) {
             // TODO - Reimplement this with correct values.
@@ -245,9 +277,6 @@ public class CDVTagManager extends CordovaPlugin {
                     JSONObject product = args.getJSONObject(0);
                     String currencyCode = args.getString(1);
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
-                    /*
-
-                    Log.d(TAG, "Before pushAddToCart : " + dataLayer.toString());
 
 
                     // Measure adding a product to a shopping cart by using an "add"
@@ -265,58 +294,22 @@ public class CDVTagManager extends CordovaPlugin {
                                                                     "quantity", 1))))));
 
                     Log.d(TAG, "After pushAddToCart : " + dataLayer.toString());
-                    */
 
                     callback.success("pushAddToCart = " + args.getString(0) + " currencyCode = " + currencyCode);
                     // Clear the Data Layer.
                     // dataLayer.push(DataLayer.mapOf("ecommerce", null));
 
-                    /*
                     dataLayer.push(
                             DataLayer.mapOf(
                                     "ecommerce", DataLayer.mapOf(
                                             "currencyCode", null,
                                             "add", null)));
-                                            */
-
                     return true;
                 } catch (final Exception e) {
                     callback.error(e.getMessage());
                 }
             } else {
                 callback.error("pushAddToCart failed - not initialized");
-            }
-        } else if (action.equals("trackPage")) {
-            if (initialized) {
-                try {
-                    DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
-                    dataLayer.pushEvent("content-view", DataLayer.mapOf("content-name", args.get(0)));
-                    TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).dispatch();
-
-                    callback.success("trackPage - url = " + args.getString(0));
-
-                    // Clear Data Layer.
-                    dataLayer.push("event", null);
-                    dataLayer.push("content-name", null);
-
-                    return true;
-                } catch (final Exception e) {
-                    callback.error(e.getMessage());
-                }
-            } else {
-                callback.error("trackPage failed - not initialized");
-            }
-        } else if (action.equals("dispatch")) {
-            if (initialized) {
-                try {
-                    TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).dispatch();
-                    callback.success("dispatch sent");
-                    return true;
-                } catch (final Exception e) {
-                    callback.error(e.getMessage());
-                }
-            } else {
-                callback.error("dispatch failed - not initialized");
             }
         } else if (action.equals("pushCheckout")) {
             if (initialized) {
@@ -326,6 +319,7 @@ public class CDVTagManager extends CordovaPlugin {
                     int stepNo = args.getInt(0);
                     JSONArray productsJSONArray = args.getJSONArray(1);
                     String option = args.getString(2);
+                    String screenName = args.getString(3);
 
                     ArrayList items = new ArrayList<Map<String, Object>>();
 
@@ -351,17 +345,13 @@ public class CDVTagManager extends CordovaPlugin {
                     }
 
                     dataLayer.pushEvent("checkout",
-                            DataLayer.mapOf(
+                            DataLayer.mapOf("content-name", screenName,
                                     "ecommerce", DataLayer.mapOf(
                                             "checkout", DataLayer.mapOf(
                                                     "actionField", actionField,
                                                     "products", products))));
-
                     callback.success("pushCheckout: " + dataLayer.toString());
-
-                    Log.d(TAG, "Push Checkout Screen View : " + dataLayer.toString());
                     dataLayer.push("ecommerce", null);
-                    Log.d(TAG, "After Clearing : " + dataLayer.toString());
                     return true;
                 } catch (final Exception e) {
                     callback.error(e.getMessage());
@@ -389,13 +379,12 @@ public class CDVTagManager extends CordovaPlugin {
                     }
 
                     List<Object> products = DataLayer.listOf(items.toArray(new Object[items.size()]));
-                    // dataLayer.push();
 
                     String contentName = "Payment Response";
 
-                    dataLayer.pushEvent("orderPlaced", DataLayer.mapOf("content-name", contentName, "ecommerce",
-                            DataLayer.mapOf(
-                                    "purchase", DataLayer.mapOf(
+                    dataLayer.pushEvent("orderPlaced",
+                            DataLayer.mapOf("content-name", contentName,
+                                    "ecommerce", DataLayer.mapOf("purchase", DataLayer.mapOf(
                                             "actionField", DataLayer.mapOf(
                                                     "id", transaction.getString("transactionId"),
                                                     "affiliation", transaction.getString("transactionAffiliation"),
@@ -406,11 +395,7 @@ public class CDVTagManager extends CordovaPlugin {
                                     ))));
 
                     callback.success("pushTransaction: " + dataLayer.toString());
-
-                    Log.d(TAG, "Pushed Transaction Screen View : " + dataLayer.toString());
                     dataLayer.push("ecommerce", null);
-                    Log.d(TAG, "After Clearing : " + dataLayer.toString());
-
                     return true;
                 } catch (final Exception e) {
                     callback.error(e.getMessage());
