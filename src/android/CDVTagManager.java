@@ -221,15 +221,11 @@ public class CDVTagManager extends CordovaPlugin {
         } else if (action.equals("pushProductClick")) {
             if (initialized) {
                 try {
-
                     JSONObject product = args.getJSONObject(0);
+                    Map<String, Object> itemMap = getProductMap(product);
                     String list = args.getString(1);
 
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
-
-                    String category = list;
-                    String productAction = "Click";
-                    String label = product.getString("name");
 
                     int value;
                     try {
@@ -238,39 +234,47 @@ public class CDVTagManager extends CordovaPlugin {
                         value = 0;
                     }
 
-                    dataLayer.push(DataLayer.mapOf(
+                    dataLayer.pushEvent("productClick", DataLayer.mapOf(
+                            "value", value,
                             "ecommerce", DataLayer.mapOf(
                                     "click", DataLayer.mapOf(
                                             "actionField", DataLayer.mapOf(
-                                                    "list", list),                    // Optional list property.
+                                                    "list", list),
                                             "products", DataLayer.listOf(
-                                                    DataLayer.mapOf(
-                                                            "name", product.get("name"),       // Name or ID is required.
-                                                            "id", product.getString("id"),
-                                                            "price", product.getString("price")
-                                                    ))))));
-
-                    dataLayer.push(DataLayer.mapOf("event", "interaction", "target", category, "action", productAction, "target-properties", label, "value", value));
-                    Log.d(TAG, "Pushed click : " + dataLayer.toString());
-                    callback.success("trackEvent - action = " + productAction + "; category = " + category + "; label = " + label + "; value = " + value);
-
-                    dataLayer.push("event", null);
-                    dataLayer.push("target", null);
-                    dataLayer.push("action", null);
-                    dataLayer.push("target-properties", null);
+                                                    itemMap)))));
+                    callback.success("pushProductClick = " + product);
                     dataLayer.push("value", null);
-
                     dataLayer.push("ecommerce", null);
-                    Log.d(TAG, "After Clearing : " + dataLayer.toString());
+                    return true;
 
+                } catch (final Exception e) {
+                    callback.error(e.getMessage());
+                }
+            } else {
+                callback.error("pushProductClick failed - not initialized");
+            }
+        } else if (action.equals("pushDetailView")) {
+            if (initialized) {
+                try {
+                    JSONObject product = args.getJSONObject(0);
+                    Map<String, Object> itemMap = getProductMap(product);
+                    DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
+                    dataLayer.pushEvent("detailView",
+                            DataLayer.mapOf(
+                                    "ecommerce", DataLayer.mapOf(
+                                            "detail", DataLayer.mapOf(
+                                                    "products", DataLayer.listOf(itemMap))),
+                                    "content-name", product.get("name")));
+
+                    callback.success("pushDetailView = " + product);
+                    dataLayer.push("ecommerce", null);
                     return true;
                 } catch (final Exception e) {
                     callback.error(e.getMessage());
                 }
             } else {
-                callback.error("trackEvent failed - not initialized");
+                callback.error("pushDetailView failed - not initialized");
             }
-
         } else if (action.equals("pushAddToCart")) {
             if (initialized) {
                 try {

@@ -45,6 +45,29 @@
 		});
 	};
 
+	TagManager.prototype.pushProductClick = function (success, fail, item, list) {
+		var timestamp = new Date().getTime();
+		queue.push({
+			timestamp: timestamp,
+			method: 'pushProductClick',
+			success: success,
+			fail: fail,
+			item: item,
+			list: list
+		});
+	};
+
+	TagManager.prototype.pushDetailView = function (success, fail, item) {
+		var timestamp = new Date().getTime();
+		queue.push({
+			timestamp: timestamp,
+			method: 'pushDetailView',
+			success: success,
+			fail: fail,
+			item : item
+		});
+	};
+
 	TagManager.prototype.pushAddToCart = function (success, fail, item, currencyCode) {
 		var timestamp = new Date().getTime();
 		queue.push({
@@ -102,18 +125,6 @@
 			success: success,
 			fail: fail,
 			items: items
-		});
-	};
-
-	TagManager.prototype.pushProductClick = function (success, fail, item, list) {
-		var timestamp = new Date().getTime();
-		queue.push({
-			timestamp: timestamp,
-			method: 'pushProductClick',
-			success: success,
-			fail: fail,
-			item: item,
-			list: list
 		});
 	};
 
@@ -189,6 +200,10 @@
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.category, item.eventAction, item.eventLabel, item.eventValue]);
 			} else if (item.method === 'pushEvent') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.eventData]);
+            } else if (item.method === 'pushProductClick') {
+               cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.list]);
+            } else if (item.method === 'pushDetailView') {
+               cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item]);
             } else if (item.method === 'pushAddToCart') {
                 cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.currencyCode]);
             }  else if (item.method === 'pushRemoveFromCart') {
@@ -199,8 +214,6 @@
                 cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.transaction, item.transactionItems]);
             } else if (item.method === 'pushImpressions') {
                 cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.items]);
-            } else if (item.method === 'pushProductClick') {
-               cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.list]);
             } else if (item.method === 'trackPage') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.pageURL]);
 			} else if (item.method === 'dispatch') {
