@@ -45,6 +45,19 @@
 		});
 	};
 
+	TagManager.prototype.pushImpressions = function (success, fail, item, list, currencyCode) {
+		var timestamp = new Date().getTime();
+		queue.push({
+			timestamp: timestamp,
+			method: 'pushImpressions',
+			success: success,
+			fail: fail,
+			item : item,
+			list : list,
+			currencyCode : currencyCode
+		});
+	};
+
 	TagManager.prototype.pushProductClick = function (success, fail, item, list) {
 		var timestamp = new Date().getTime();
 		queue.push({
@@ -200,6 +213,8 @@
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.category, item.eventAction, item.eventLabel, item.eventValue]);
 			} else if (item.method === 'pushEvent') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.eventData]);
+            } else if (item.method === 'pushImpressions') {
+               cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.list, item.currencyCode]);
             } else if (item.method === 'pushProductClick') {
                cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.list]);
             } else if (item.method === 'pushDetailView') {
@@ -212,8 +227,6 @@
 			    cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.stepNo, item.products, item.option, item.screenName]);
 			} else if (item.method === 'pushTransaction') {
                 cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.transaction, item.transactionItems]);
-            } else if (item.method === 'pushImpressions') {
-                cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.items]);
             } else if (item.method === 'trackPage') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.pageURL]);
 			} else if (item.method === 'dispatch') {

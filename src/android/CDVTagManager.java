@@ -162,7 +162,6 @@ public class CDVTagManager extends CordovaPlugin {
 
                     callback.success("trackPage - url = " + args.getString(0));
 
-                    // Clear Data Layer.
                     dataLayer.push("event", null);
                     dataLayer.push("content-name", null);
 
@@ -174,44 +173,29 @@ public class CDVTagManager extends CordovaPlugin {
                 callback.error("trackPage failed - not initialized");
             }
         } else if (action.equals("pushImpressions")) {
-            // TODO - Reimplement this with correct values.
             if (initialized) {
                 try {
-            /*
-
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
-                    // Product impressions are sent by pushing an impressions object
-                    // containing one or more impressionFieldObjects.
-                    // Sample Data - Replace with real data.
-                    dataLayer.push("ecommerce",
-                            DataLayer.mapOf(
-                                    "currencyCode", "EUR",                                  // Local currency is optional.
-                                    "impressions", DataLayer.listOf(
-                                            DataLayer.mapOf(
-                                                    "name", "Triblend Android T-Shirt",             // Name or ID is required.
-                                                    "id", "12345",
-                                                    "price", "15.25",
-                                                    "brand", "Google",
-                                                    "category", "Google Apparel",
-                                                    "variant", "Gray",
-                                                    "list", "Search Results",
-                                                    "position", 1),
-                                            DataLayer.mapOf(
-                                                    "name", "Donut Friday Scented T-Shirt",
-                                                    "id", "67890",
-                                                    "price", "33.75",
-                                                    "brand", "Google",
-                                                    "category", "Google Apparel",
-                                                    "variant", "Black",
-                                                    "list", "Search Results",
-                                                    "position", 2))));
+                    JSONObject item = args.getJSONObject(0);
+                    String list = args.getString(1);
+                    String currencyCode = args.getString(2);
+
+                    Map<String, Object> itemMap = DataLayer.mapOf(
+                            "name", item.getString("name"),
+                            "id", item.getString("id"),
+                            "price", item.getString("price"),
+                            "list", list);
+
+                    dataLayer.pushEvent("productImpression", DataLayer.mapOf(
+                            "ecommerce", DataLayer.mapOf(
+                                    "currencyCode", currencyCode,
+                                    "impressions", DataLayer.listOf(itemMap)),
+                            "content-name", item.get("name")
+                    ));
+
                     callback.success("pushImpressions: " + dataLayer.toString());
-
-            */
-                    callback.success("pushImpressions called. ");
-
+                    dataLayer.push("ecommerce", null);
                     return true;
-
                 } catch (final Exception e) {
                     callback.error(e.getMessage());
                 }
@@ -445,20 +429,6 @@ public class CDVTagManager extends CordovaPlugin {
         }
         return map;
     }
-
-    private void clearDataLayer() {
-        DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
-        // Clear the Data Layer as it persists the data
-        dataLayer.push(DataLayer.mapOf("transactionId", null,
-                "transactionTotal", null,
-                "transactionAffiliation", null,
-                "transactionTax", null,
-                "transactionShipping", null,
-                "transactionCurrency", null,
-                "transactionProducts", null));
-
-    }
-
 
     private static class ContainerLoadedCallback implements ContainerHolder.ContainerAvailableListener {
         static void registerCallbacksForContainer(Container container) {
