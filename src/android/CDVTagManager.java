@@ -172,7 +172,7 @@ public class CDVTagManager extends CordovaPlugin {
             } else {
                 callback.error("trackPage failed - not initialized");
             }
-        } else if (action.equals("pushImpressions")) {
+        } else if (action.equals("pushImpression")) {
             if (initialized) {
                 try {
                     DataLayer dataLayer = TagManager.getInstance(this.cordova.getActivity().getApplicationContext()).getDataLayer();
@@ -193,14 +193,14 @@ public class CDVTagManager extends CordovaPlugin {
                             "content-name", item.get("name")
                     ));
 
-                    callback.success("pushImpressions: " + dataLayer.toString());
+                    callback.success("pushImpression: " + dataLayer.toString());
                     dataLayer.push("ecommerce", null);
                     return true;
                 } catch (final Exception e) {
                     callback.error(e.getMessage());
                 }
             } else {
-                callback.error("pushImpressions failed - not initialized");
+                callback.error("pushImpression failed - not initialized");
             }
         } else if (action.equals("pushProductClick")) {
             if (initialized) {

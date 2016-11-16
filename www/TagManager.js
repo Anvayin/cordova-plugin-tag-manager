@@ -130,11 +130,11 @@
 		});
 	};
 
-	TagManager.prototype.pushImpressions = function (success, fail, items) {
+	TagManager.prototype.pushImpression = function (success, fail, items) {
 		var timestamp = new Date().getTime();
 		queue.push({
 			timestamp: timestamp,
-			method: 'pushImpressions',
+			method: 'pushImpression',
 			success: success,
 			fail: fail,
 			items: items
@@ -213,7 +213,7 @@
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.category, item.eventAction, item.eventLabel, item.eventValue]);
 			} else if (item.method === 'pushEvent') {
 				cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.eventData]);
-            } else if (item.method === 'pushImpressions') {
+            } else if (item.method === 'pushImpression') {
                cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.list, item.currencyCode]);
             } else if (item.method === 'pushProductClick') {
                cordovaRef.exec(item.success, item.fail, 'TagManager', item.method, [item.item, item.list]);
