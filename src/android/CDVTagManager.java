@@ -78,8 +78,8 @@ public class CDVTagManager extends CordovaPlugin {
 
                 String containerId = args.getString(0);
 
-                // TODO - Provide a way to specify the default container through plugin configuration
-                PendingResult<ContainerHolder> pending = tagManager.loadContainerPreferNonDefault(containerId, R.raw.defaultcontainer_binary);
+                // Passing '0' (Non Existing) as the resource ID so that fresh container will be loaded.
+                PendingResult<ContainerHolder> pending = tagManager.loadContainerPreferNonDefault(containerId, 0);
                 pending.setResultCallback(new ResultCallback<ContainerHolder>() {
                     @Override
                     public void onResult(@NonNull ContainerHolder containerHolder) {
