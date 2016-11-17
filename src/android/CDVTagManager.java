@@ -48,8 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import co.mchannel.fashionforall.R;
-
 /**
  * This class echoes a string called from JavaScript.
  */
