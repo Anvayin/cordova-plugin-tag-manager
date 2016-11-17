@@ -45,11 +45,11 @@
 		});
 	};
 
-	TagManager.prototype.pushImpressions = function (success, fail, item, list, currencyCode) {
+	TagManager.prototype.pushImpression = function (success, fail, item, list, currencyCode) {
 		var timestamp = new Date().getTime();
 		queue.push({
 			timestamp: timestamp,
-			method: 'pushImpressions',
+			method: 'pushImpression',
 			success: success,
 			fail: fail,
 			item : item,
@@ -127,17 +127,6 @@
 			fail: fail,
 			transaction: transaction,
 			transactionItems: transactionItems
-		});
-	};
-
-	TagManager.prototype.pushImpression = function (success, fail, items) {
-		var timestamp = new Date().getTime();
-		queue.push({
-			timestamp: timestamp,
-			method: 'pushImpression',
-			success: success,
-			fail: fail,
-			items: items
 		});
 	};
 
