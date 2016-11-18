@@ -22,6 +22,7 @@
 
 package com.jareddickson.cordova.tagmanager;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -76,8 +77,11 @@ public class CDVTagManager extends CordovaPlugin {
 
                 String containerId = args.getString(0);
 
-                // Passing '0' (Non Existing) as the resource ID so that fresh container will be loaded.
-                PendingResult<ContainerHolder> pending = tagManager.loadContainerPreferNonDefault(containerId, 0);
+                Context context = this.cordova.getActivity().getApplicationContext();
+
+                int defaultContainerBinary = context.getResources().getIdentifier("defaultcontainer_binary", "raw", context.getPackageName());
+
+                PendingResult<ContainerHolder> pending = tagManager.loadContainerPreferNonDefault(containerId, defaultContainerBinary);
                 pending.setResultCallback(new ResultCallback<ContainerHolder>() {
                     @Override
                     public void onResult(@NonNull ContainerHolder containerHolder) {
