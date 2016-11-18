@@ -74,13 +74,9 @@ public class CDVTagManager extends CordovaPlugin {
                 // GAServiceManager.getInstance().setLocalDispatchPeriod(args.getInt(1));
                 TagManager tagManager = TagManager.getInstance(this.cordova.getActivity().getApplicationContext());
                 tagManager.setVerboseLoggingEnabled(true);
-
                 String containerId = args.getString(0);
-
                 Context context = this.cordova.getActivity().getApplicationContext();
-
                 int defaultContainerBinary = context.getResources().getIdentifier("defaultcontainer_binary", "raw", context.getPackageName());
-
                 PendingResult<ContainerHolder> pending = tagManager.loadContainerPreferNonDefault(containerId, defaultContainerBinary);
                 pending.setResultCallback(new ResultCallback<ContainerHolder>() {
                     @Override
