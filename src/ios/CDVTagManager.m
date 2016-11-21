@@ -45,7 +45,7 @@
                                    openType:kTAGOpenTypePreferNonDefault
                                     timeout:nil
                                    notifier:self];
-    [self successWithMessage:[NSString stringWithFormat:@"initGTM: accountID = %@; Interval = %d seconds",accountID, dispatchPeriod] toID:callbackId];
+    [self successWithMessage:[NSString stringWithFormat:@"initGTM: accountID = %@; Interval = %ld seconds",accountID, (long)dispatchPeriod] toID:callbackId];
 }
 
 - (void) containerAvailable:(TAGContainer *)container {
@@ -117,6 +117,70 @@
     }
     else
         [self failWithMessage:@"trackPage failed - not initialized" toID:callbackId withError:nil];
+}
+
+- (void) pushTransaction : (CDVInvokedUrlCommand *) command
+{
+    NSString            *callbackId = command.callbackId;
+    
+    if (inited)
+    {
+        NSDictionary *transaction = [command.arguments objectAtIndex:0];
+        NSArray *transactionItems = [command.arguments objectAtIndex:1];
+        for (NSDictionary *item in transactionItems){
+            if ([item objectForKey:@"quantity"] == nil){
+                [item setValue:@"1" forKey:@"quantity"];
+            }
+        }
+        
+        NSString *contentName = @"Payment Response";
+        
+        TAGDataLayer *dataLayer = [TAGManager instance].dataLayer;
+        NSDictionary *data = @{@"event":@"orderPlaced",
+                               @"content-name":contentName,
+                               @"ecommerce" : @{
+                                       @"purchase": @{
+                                                        @"actionField" : @{
+                                                                @"id" : [transaction objectForKey:@"transactionId"],
+                                                                @"affiliation": [transaction objectForKey:@"transactionAffiliation"],
+                                                                @"revenue": [transaction objectForKey:@"transactionTotal"],
+                                                                @"tax": [transaction objectForKey:@"transactionTax"],
+                                                                @"shipping": [transaction objectForKey:@"transactionShipping"]
+                                                                },
+                                                        @"products": transactionItems
+                                                        }
+                                       }
+                               };
+        [dataLayer push: data];
+        
+        NSMutableArray *mutableItems = [transactionItems mutableCopy];
+        
+        // Clear the Data Layer
+        for (NSDictionary *item in mutableItems){
+            [item setValue:@"" forKey:@"name"];
+            [item setValue:@"" forKey:@"id"];
+            [item setValue:@"" forKey:@"price"];
+            [item setValue:@"" forKey:@"quantity"];
+        }
+        
+        // Clear the Data Layer
+        [dataLayer push: @{@"content-name": @"",
+                           @"ecommerce": @{
+                                   @"purchase": @{
+                                           @"actionField" : @{
+                                                   @"id" : @"",
+                                                   @"affiliation": @"",
+                                                   @"revenue": @"",
+                                                   @"tax": @"",
+                                                   @"shipping": @""
+                                           },
+                                           @"products": mutableItems
+                                           }
+                                   }
+                           }];
+        
+    }else
+        [self failWithMessage:@"pushTransaction failed - not initialized" toID:callbackId withError:nil];
 }
 
 - (void) dispatch:(CDVInvokedUrlCommand*)command
