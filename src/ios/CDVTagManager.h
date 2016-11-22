@@ -30,7 +30,7 @@
 @class TAGManager;
 @class TAGContainer;
 
-@interface CDVTagManager : CDVPlugin
+@interface CDVTagManager : CDVPlugin <TAGContainerOpenerNotifier>
 {
     BOOL    inited;
 }
