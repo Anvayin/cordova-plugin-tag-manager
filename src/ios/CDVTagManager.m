@@ -152,26 +152,7 @@
         
         [dataLayer push: data];
         
-        // Clear the Data Layer
-        for (NSDictionary *item in productsJSONArray){
-            [item setValue:@"" forKey:@"name"];
-            [item setValue:@"" forKey:@"id"];
-            [item setValue:@"" forKey:@"price"];
-            [item setValue:@"" forKey:@"quantity"];
-        }
-        
-        // Clear the Data Layer
-        [dataLayer push: @{@"content-name": @"",
-                           @"ecommerce": @{
-                                   @"checkout": @{
-                                           @"actionField" : @{
-                                                   @"step" : @"",
-                                                   @"option": @""
-                                                   },
-                                           @"products": productsJSONArray
-                                           }
-                                   }
-                           }];
+        [dataLayer push: @{@"ecommerce": [NSNull null]}];
         
     } else
         [self failWithMessage:@"pushCheckout failed - not initialized" toID:callbackId withError:nil];
@@ -211,28 +192,7 @@
         [dataLayer push: data];
         
         // Clear the Data Layer
-        for (NSDictionary *item in transactionItems){
-            [item setValue:@"" forKey:@"name"];
-            [item setValue:@"" forKey:@"id"];
-            [item setValue:@"" forKey:@"price"];
-            [item setValue:@"" forKey:@"quantity"];
-        }
-        
-        // Clear the Data Layer
-        [dataLayer push: @{@"content-name": @"",
-                           @"ecommerce": @{
-                                   @"purchase": @{
-                                           @"actionField" : @{
-                                                   @"id" : @"",
-                                                   @"affiliation": @"",
-                                                   @"revenue": @"",
-                                                   @"tax": @"",
-                                                   @"shipping": @""
-                                           },
-                                           @"products": transactionItems
-                                           }
-                                   }
-                           }];
+        [dataLayer push: @{@"ecommerce": [NSNull null]}];
         
     }else
         [self failWithMessage:@"pushTransaction failed - not initialized" toID:callbackId withError:nil];
