@@ -22,7 +22,7 @@
 
 #import "CDVTagManager.h"
 
-@implementation CDVTagManager
+@implementation CDVTagManager 
 - (void) initGTM:(CDVInvokedUrlCommand*)command
 {
     NSString    *callbackId = command.callbackId;
@@ -153,10 +153,10 @@
                                };
         [dataLayer push: data];
         
-        NSMutableArray *mutableItems = [transactionItems mutableCopy];
+        // NSMutableArray *mutableItems = [transactionItems mutableCopy];
         
         // Clear the Data Layer
-        for (NSDictionary *item in mutableItems){
+        for (NSDictionary *item in transactionItems){
             [item setValue:@"" forKey:@"name"];
             [item setValue:@"" forKey:@"id"];
             [item setValue:@"" forKey:@"price"];
@@ -174,7 +174,7 @@
                                                    @"tax": @"",
                                                    @"shipping": @""
                                            },
-                                           @"products": mutableItems
+                                           @"products": transactionItems
                                            }
                                    }
                            }];
