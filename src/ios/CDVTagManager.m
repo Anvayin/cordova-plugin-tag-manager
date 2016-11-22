@@ -119,10 +119,67 @@
         [self failWithMessage:@"trackPage failed - not initialized" toID:callbackId withError:nil];
 }
 
+- (void) pushCheckout : (CDVInvokedUrlCommand *) command
+{
+    NSString            *callbackId = command.callbackId;
+    if (inited)
+    {
+        TAGDataLayer *dataLayer = [TAGManager instance].dataLayer;
+        NSNumber *stepNo = [NSNumber numberWithInt: [[command.arguments objectAtIndex:0] intValue]];
+        NSArray *productsJSONArray = [command.arguments objectAtIndex:1];
+        
+        for (NSDictionary *item in productsJSONArray){
+            if ([item objectForKey:@"quantity"] == nil){
+                [item setValue:@"1" forKey:@"quantity"];
+            }
+        }
+        
+        NSString *option = [command.arguments objectAtIndex:2];
+        NSString *screenName = [command.arguments objectAtIndex:3];
+        
+        NSDictionary *data = @{@"event":@"checkout",
+                               @"content-name":screenName,
+                               @"ecommerce" : @{
+                                       @"checkout": @{
+                                               @"actionField" : @{
+                                                       @"step" : stepNo,
+                                                       @"option": option
+                                                       },
+                                               @"products": productsJSONArray
+                                               }
+                                       }
+                               };
+        
+        [dataLayer push: data];
+        
+        // Clear the Data Layer
+        for (NSDictionary *item in productsJSONArray){
+            [item setValue:@"" forKey:@"name"];
+            [item setValue:@"" forKey:@"id"];
+            [item setValue:@"" forKey:@"price"];
+            [item setValue:@"" forKey:@"quantity"];
+        }
+        
+        // Clear the Data Layer
+        [dataLayer push: @{@"content-name": @"",
+                           @"ecommerce": @{
+                                   @"checkout": @{
+                                           @"actionField" : @{
+                                                   @"step" : @"",
+                                                   @"option": @""
+                                                   },
+                                           @"products": productsJSONArray
+                                           }
+                                   }
+                           }];
+        
+    } else
+        [self failWithMessage:@"pushCheckout failed - not initialized" toID:callbackId withError:nil];
+}
+
 - (void) pushTransaction : (CDVInvokedUrlCommand *) command
 {
     NSString            *callbackId = command.callbackId;
-    
     if (inited)
     {
         NSDictionary *transaction = [command.arguments objectAtIndex:0];
@@ -152,8 +209,6 @@
                                        }
                                };
         [dataLayer push: data];
-        
-        // NSMutableArray *mutableItems = [transactionItems mutableCopy];
         
         // Clear the Data Layer
         for (NSDictionary *item in transactionItems){
