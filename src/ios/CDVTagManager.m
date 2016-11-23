@@ -22,23 +22,23 @@
 
 #import "CDVTagManager.h"
 
-@implementation CDVTagManager 
+@implementation CDVTagManager
 - (void) initGTM:(CDVInvokedUrlCommand*)command
 {
     NSString    *callbackId = command.callbackId;
     NSString    *accountID = [command.arguments objectAtIndex:0];
     NSInteger   dispatchPeriod = [[command.arguments objectAtIndex:1] intValue];
-
+    
     inited = FALSE;
     self.tagManager = [TAGManager instance];
-
+    
     // Modify the log level of the logger to print out not only
     // warning and error messages, but also verbose, debug, info messages.
     [self.tagManager.logger setLogLevel:kTAGLoggerLogLevelVerbose];
-
+    
     // Set the dispatch interval
     self.tagManager.dispatchInterval = dispatchPeriod;
-
+    
     // Open a container.
     [TAGContainerOpener openContainerWithId:accountID
                                  tagManager:self.tagManager
@@ -60,10 +60,10 @@
 -(void) exitGTM:(CDVInvokedUrlCommand*)command
 {
     NSString *callbackId = command.callbackId;
-
+    
     if (inited)
         [self.container close];
-
+    
     [self successWithMessage:@"exitGTM" toID:callbackId];
 }
 
@@ -79,7 +79,7 @@
     {
         eventValue = [NSNumber numberWithInt:[valueObject intValue]];
     }
-
+    
     if (inited)
     {
         TAGDataLayer *dataLayer = [TAGManager instance].dataLayer;
@@ -94,7 +94,7 @@
 {
     NSString        *callbackId = command.callbackId;
     NSDictionary    *eventData = [command.arguments objectAtIndex:0];
-
+    
     if (inited)
     {
         TAGDataLayer *dataLayer = [TAGManager instance].dataLayer;
@@ -109,7 +109,7 @@
 {
     NSString            *callbackId = command.callbackId;
     NSString            *pageURL = [command.arguments objectAtIndex:0];
-
+    
     if (inited)
     {
         TAGDataLayer *dataLayer = [TAGManager instance].dataLayer;
@@ -119,6 +119,91 @@
         [self failWithMessage:@"trackPage failed - not initialized" toID:callbackId withError:nil];
 }
 
+- (void) pushImpression : (CDVInvokedUrlCommand *) command
+{
+    NSString *callbackId = command.callbackId;
+    if (inited)
+    {
+        TAGDataLayer *dataLayer = [TAGManager instance].dataLayer;
+        NSDictionary *product = [command.arguments objectAtIndex:0];
+        NSString *list = [command.arguments objectAtIndex:1];
+        [product setValue:list forKey:@"list"];
+        NSString *currencyCode = [command.arguments objectAtIndex:2];
+        
+        NSArray *productsArray = @[product];
+        
+        NSDictionary *data = @{@"event":@"productImpression",
+                               @"content-name" : [product objectForKey:@"name"],
+                               @"ecommerce" : @{
+                                       @"currencyCode" : currencyCode,
+                                       @"impressions": productsArray
+                                       }
+                               };
+        
+        [dataLayer push:data];
+        [dataLayer push:@{@"ecommerce" : [NSNull null]}];
+    }
+    else
+        [self failWithMessage:@"pushImpression failed - not initialized" toID:callbackId withError:nil];
+}
+
+- (void) pushProductClick : (CDVInvokedUrlCommand *) command
+{
+    NSString            *callbackId = command.callbackId;
+    if (inited)
+    {
+        TAGDataLayer *dataLayer = [TAGManager instance].dataLayer;
+        NSDictionary *product = [command.arguments objectAtIndex:0];
+        NSString *list = [command.arguments objectAtIndex:1];
+        
+        [self speficyQuantity:product];
+        
+        NSNumber *value = [NSNumber numberWithInt: [[product objectForKey:@"price"] intValue]];
+        NSArray *productsArray = @[product];
+        
+        NSDictionary *data = @{@"event":@"productClick",
+                               @"value" : value,
+                               @"ecommerce" : @{
+                                       @"click": @{
+                                               @"actionField" : @{@"list" : list},
+                                               @"products": productsArray
+                                               }
+                                       }
+                               };
+        
+        [dataLayer push: data];
+        [dataLayer push: @{@"ecommerce": [NSNull null]}];
+    }else
+        [self failWithMessage:@"pushProductClick failed - not initialized" toID:callbackId withError:nil];
+    
+}
+
+- (void) pushDetailView : (CDVInvokedUrlCommand *) command
+{
+    NSString *callbackId = command.callbackId;
+    if (inited)
+    {
+        TAGDataLayer *dataLayer = [TAGManager instance].dataLayer;
+        NSDictionary *product = [command.arguments objectAtIndex:0];
+        [self speficyQuantity:product];
+        NSArray *productsArray = @[product];
+        
+        NSDictionary *data = @{@"event":@"detailView",
+                               @"content-name" : [product objectForKey:@"name"],
+                               @"ecommerce" : @{
+                                       @"detail": @{
+                                               @"products": productsArray
+                                               }
+                                       }
+                               };
+        
+        [dataLayer push:data];
+        [dataLayer push:@{@"ecommerce" : [NSNull null]}];
+    }
+    else
+        [self failWithMessage:@"pushDetailView failed - not initialized" toID:callbackId withError:nil];
+}
+
 - (void) pushRemoveFromCart : (CDVInvokedUrlCommand *) command
 {
     NSString            *callbackId = command.callbackId;
@@ -126,13 +211,13 @@
     {
         TAGDataLayer *dataLayer = [TAGManager instance].dataLayer;
         NSDictionary *product = [command.arguments objectAtIndex:0];
-        if ([product objectForKey:@"quantity"]  == nil){
-            [product setValue:@"1" forKey:@"quantity"];
-        }
+        
+        [self speficyQuantity:product];
+        
         NSNumber *value = [NSNumber numberWithInt: [[product objectForKey:@"price"] intValue]];
         NSArray *productsArray = @[product];
         
-        NSDictionary *data = @{@"event":@"addToCart",
+        NSDictionary *data = @{@"event":@"removeFromCart",
                                @"value" : value,
                                @"ecommerce" : @{
                                        @"remove": @{
@@ -156,13 +241,13 @@
     {
         TAGDataLayer *dataLayer = [TAGManager instance].dataLayer;
         NSDictionary *product = [command.arguments objectAtIndex:0];
-        if ([product objectForKey:@"quantity"]  == nil){
-            [product setValue:@"1" forKey:@"quantity"];
-        }
+        
+        [self speficyQuantity:product];
+        
         NSString *currencyCode = [command.arguments objectAtIndex:1];
         NSNumber *value = [NSNumber numberWithInt: [[product objectForKey:@"price"] intValue]];
         NSArray *productsArray = @[product];
-
+        
         NSDictionary *data = @{@"event":@"addToCart",
                                @"value" : value,
                                @"ecommerce" : @{
@@ -191,9 +276,7 @@
         NSArray *productsJSONArray = [command.arguments objectAtIndex:1];
         
         for (NSDictionary *item in productsJSONArray){
-            if ([item objectForKey:@"quantity"] == nil){
-                [item setValue:@"1" forKey:@"quantity"];
-            }
+            [self speficyQuantity:item];
         }
         
         NSString *option = [command.arguments objectAtIndex:2];
@@ -228,9 +311,7 @@
         NSDictionary *transaction = [command.arguments objectAtIndex:0];
         NSArray *transactionItems = [command.arguments objectAtIndex:1];
         for (NSDictionary *item in transactionItems){
-            if ([item objectForKey:@"quantity"] == nil){
-                [item setValue:@"1" forKey:@"quantity"];
-            }
+            [self speficyQuantity:item];
         }
         
         NSString *contentName = @"Payment Response";
@@ -240,15 +321,15 @@
                                @"content-name":contentName,
                                @"ecommerce" : @{
                                        @"purchase": @{
-                                                        @"actionField" : @{
-                                                                @"id" : [transaction objectForKey:@"transactionId"],
-                                                                @"affiliation": [transaction objectForKey:@"transactionAffiliation"],
-                                                                @"revenue": [transaction objectForKey:@"transactionTotal"],
-                                                                @"tax": [transaction objectForKey:@"transactionTax"],
-                                                                @"shipping": [transaction objectForKey:@"transactionShipping"]
-                                                                },
-                                                        @"products": transactionItems
-                                                        }
+                                               @"actionField" : @{
+                                                       @"id" : [transaction objectForKey:@"transactionId"],
+                                                       @"affiliation": [transaction objectForKey:@"transactionAffiliation"],
+                                                       @"revenue": [transaction objectForKey:@"transactionTotal"],
+                                                       @"tax": [transaction objectForKey:@"transactionTax"],
+                                                       @"shipping": [transaction objectForKey:@"transactionShipping"]
+                                                       },
+                                               @"products": transactionItems
+                                               }
                                        }
                                };
         [dataLayer push: data];
@@ -260,10 +341,17 @@
         [self failWithMessage:@"pushTransaction failed - not initialized" toID:callbackId withError:nil];
 }
 
+- (void) speficyQuantity : (NSDictionary *) product
+{
+    if ([product objectForKey:@"quantity"]  == nil){
+        [product setValue:@"1" forKey:@"quantity"];
+    }
+}
+
 - (void) dispatch:(CDVInvokedUrlCommand*)command
 {
     NSString            *callbackId = command.callbackId;
-
+    
     if (inited)
     {
         [self.tagManager dispatch];
@@ -275,7 +363,7 @@
 -(void) successWithMessage:(NSString *)message toID:(NSString *)callbackID
 {
     CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:message];
-
+    
     [self.commandDelegate sendPluginResult:commandResult callbackId:callbackID];
 }
 
@@ -283,7 +371,7 @@
 {
     NSString        *errorMessage = (error) ? [NSString stringWithFormat:@"%@ - %@", message, [error localizedDescription]] : message;
     CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorMessage];
-
+    
     [self.commandDelegate sendPluginResult:commandResult callbackId:callbackID];
 }
 
