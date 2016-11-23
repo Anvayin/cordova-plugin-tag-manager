@@ -119,6 +119,68 @@
         [self failWithMessage:@"trackPage failed - not initialized" toID:callbackId withError:nil];
 }
 
+- (void) pushRemoveFromCart : (CDVInvokedUrlCommand *) command
+{
+    NSString            *callbackId = command.callbackId;
+    if (inited)
+    {
+        TAGDataLayer *dataLayer = [TAGManager instance].dataLayer;
+        NSDictionary *product = [command.arguments objectAtIndex:0];
+        if ([product objectForKey:@"quantity"]  == nil){
+            [product setValue:@"1" forKey:@"quantity"];
+        }
+        NSNumber *value = [NSNumber numberWithInt: [[product objectForKey:@"price"] intValue]];
+        NSArray *productsArray = @[product];
+        
+        NSDictionary *data = @{@"event":@"addToCart",
+                               @"value" : value,
+                               @"ecommerce" : @{
+                                       @"remove": @{
+                                               @"products": productsArray
+                                               }
+                                       }
+                               };
+        
+        [dataLayer push: data];
+        [dataLayer push: @{@"ecommerce": [NSNull null]}];
+        
+    }else
+        [self failWithMessage:@"pushRemoveFromCart failed - not initialized" toID:callbackId withError:nil];
+    
+}
+
+- (void) pushAddToCart : (CDVInvokedUrlCommand *) command
+{
+    NSString            *callbackId = command.callbackId;
+    if (inited)
+    {
+        TAGDataLayer *dataLayer = [TAGManager instance].dataLayer;
+        NSDictionary *product = [command.arguments objectAtIndex:0];
+        if ([product objectForKey:@"quantity"]  == nil){
+            [product setValue:@"1" forKey:@"quantity"];
+        }
+        NSString *currencyCode = [command.arguments objectAtIndex:1];
+        NSNumber *value = [NSNumber numberWithInt: [[product objectForKey:@"price"] intValue]];
+        NSArray *productsArray = @[product];
+
+        NSDictionary *data = @{@"event":@"addToCart",
+                               @"value" : value,
+                               @"ecommerce" : @{
+                                       @"currencyCode": currencyCode,
+                                       @"add": @{
+                                               @"products": productsArray
+                                               }
+                                       }
+                               };
+        
+        [dataLayer push: data];
+        [dataLayer push: @{@"ecommerce": [NSNull null]}];
+        
+    }else
+        [self failWithMessage:@"pushAddToCart failed - not initialized" toID:callbackId withError:nil];
+    
+}
+
 - (void) pushCheckout : (CDVInvokedUrlCommand *) command
 {
     NSString            *callbackId = command.callbackId;
